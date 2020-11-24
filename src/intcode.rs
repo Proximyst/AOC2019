@@ -67,8 +67,11 @@ pub fn run(
     };
 
     while !result.has_halted {
+        eprintln!("Program: {:?}", program);
+        eprintln!("Result: {:?}", result);
         let mut inc = true;
         let instr = Instr::parse(&program[result.pc..]);
+        eprintln!("INSTR @ {} ({}): {:?}", result.pc, program[result.pc], instr);
         match instr {
             Instr::Hlt => {
                 result.has_halted = true;
@@ -133,17 +136,17 @@ pub fn run(
             Instr::LT(lhs, rhs, dst) => {
                 let lhs = lhs.read(&program, result.relative_base);
                 let rhs = rhs.read(&program, result.relative_base);
-                let out = dst.read(&program, result.relative_base);
-                debug_assert!(out >= 0, "dst ({}; {:?}) must be >= 0", out, dst);
-                program[out as usize] = (lhs < rhs) as isize;
+                let out = dst.index(result.relative_base);
+                program.ensure_min(out, 0);
+                program[out] = (lhs < rhs) as isize;
             }
 
             Instr::EQ(lhs, rhs, dst) => {
                 let lhs = lhs.read(&program, result.relative_base);
                 let rhs = rhs.read(&program, result.relative_base);
-                let out = dst.read(&program, result.relative_base);
-                debug_assert!(out >= 0, "dst ({}; {:?}) must be >= 0", out, dst);
-                program[out as usize] = (lhs == rhs) as isize;
+                let out = dst.index(result.relative_base);
+                program.ensure_min(out, 0);
+                program[out] = (lhs == rhs) as isize;
             }
 
             Instr::ModRelBas(base) => {
@@ -331,10 +334,18 @@ impl Mod {
     fn read(self, memory: &[isize], relbas: usize) -> isize {
         match self {
             Self::Immediate(i) => i,
-            _ => memory[self.index(relbas)],
+            _ => {
+                let idx = self.index(relbas);
+                if memory.len() <= idx {
+                    return 0;
+                }
+
+                memory[idx]
+            },
         }
     }
 
+    #[inline(always)]
     fn index(self, relbas: usize) -> usize {
         match self {
             Self::Immediate(_) => panic!("Immediate is not an index"),
@@ -512,4 +523,88 @@ fn test_day2() {
     let res = run(&mut code, (0, 0), &mut NoIoBusImpl::default());
     assert!(res.has_halted);
     assert_eq!(code[0], 3790689);
+}
+
+#[test]
+fn test_day5() {
+    struct SimpleIoBus(isize, isize);
+
+    impl IoBus for SimpleIoBus {
+        fn input(&mut self) -> Option<isize> {
+            Some(self.0)
+        }
+
+        fn output(&mut self, i: isize) -> bool {
+            self.1 = i;
+            false
+        }
+    }
+
+    let code = vec![
+        3, 21, 1008, 21, 8, 20, 1005, 20, 22, 107, 8, 21, 20, 1006, 20, 31, 1106, 0, 36, 98, 0, 0,
+        1002, 21, 125, 20, 4, 20, 1105, 1, 46, 104, 999, 1105, 1, 46, 1101, 1000, 1, 20, 4, 20,
+        1105, 1, 46, 98, 99,
+    ];
+    let mut result = SimpleIoBus(6, 0);
+
+    let mut c = code.clone();
+    let res = run(&mut c, (0, 0), &mut result);
+    assert!(res.has_halted);
+    assert_eq!(result.1, 999);
+
+    result.0 = 8;
+    let res = run(&mut code.clone(), (0, 0), &mut result);
+    assert!(res.has_halted);
+    assert_eq!(result.1, 1000);
+
+    result.0 = 69;
+    let res = run(&mut code.clone(), (0, 0), &mut result);
+    assert!(res.has_halted);
+    assert_eq!(result.1, 1001);
+}
+
+#[test]
+fn test_day9() {
+    struct SimpleIoBus(bool, isize);
+
+    impl IoBus for SimpleIoBus {
+        fn input(&mut self) -> Option<isize> {
+            panic!("No input allowed")
+        }
+
+        fn output(&mut self, i: isize) -> bool {
+            self.1 = i;
+            self.0
+        }
+    }
+
+    let mut code = vec![1102, 34915192, 34915192, 7, 4, 7, 99, 0];
+    let mut result = SimpleIoBus(true, 0);
+    let _ = run(&mut code, (0, 0), &mut result);
+    assert_eq!(result.1, 1219070632396864);
+
+    let mut code = vec![104, 125899906842624, 99];
+    let _ = run(&mut code, (0, 0), &mut result);
+    assert_eq!(result.1, 125899906842624);
+
+    struct AnotherIoBus<'a>(std::slice::Iter<'a, isize>);
+    impl<'a> IoBus for AnotherIoBus<'a> {
+        fn input(&mut self) -> Option<isize> {
+            panic!("No input allowed")
+        }
+
+        fn output(&mut self, i: isize) -> bool {
+            let next = *self.0.next().unwrap();
+            eprintln!("OUTPUT RECV: {}, WANT {:?}", i, next);
+            //assert_eq!(i, *self.0.next().unwrap());
+            assert_eq!(i, next);
+            false
+        }
+    }
+
+    let code = vec![
+        109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99,
+    ];
+    let iter = code.iter();
+    let _ = run(&mut code.clone(), (0, 0), &mut AnotherIoBus(iter));
 }
