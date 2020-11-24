@@ -67,11 +67,8 @@ pub fn run(
     };
 
     while !result.has_halted {
-        eprintln!("Program: {:?}", program);
-        eprintln!("Result: {:?}", result);
         let mut inc = true;
         let instr = Instr::parse(&program[result.pc..]);
-        eprintln!("INSTR @ {} ({}): {:?}", result.pc, program[result.pc], instr);
         match instr {
             Instr::Hlt => {
                 result.has_halted = true;
@@ -152,7 +149,7 @@ pub fn run(
             Instr::ModRelBas(base) => {
                 let new = base.read(&program, result.relative_base);
                 debug_assert!(new >= 0, "base ({}; {:?}) must be >= 0", new, base);
-                result.relative_base = new as usize;
+                result.relative_base += new as usize;
             }
         }
 
@@ -581,7 +578,7 @@ fn test_day9() {
     let mut code = vec![1102, 34915192, 34915192, 7, 4, 7, 99, 0];
     let mut result = SimpleIoBus(true, 0);
     let _ = run(&mut code, (0, 0), &mut result);
-    assert_eq!(result.1, 1219070632396864);
+    assert_eq!(result.1, 34915192 * 34915192);
 
     let mut code = vec![104, 125899906842624, 99];
     let _ = run(&mut code, (0, 0), &mut result);
@@ -594,10 +591,7 @@ fn test_day9() {
         }
 
         fn output(&mut self, i: isize) -> bool {
-            let next = *self.0.next().unwrap();
-            eprintln!("OUTPUT RECV: {}, WANT {:?}", i, next);
-            //assert_eq!(i, *self.0.next().unwrap());
-            assert_eq!(i, next);
+            assert_eq!(i, *self.0.next().unwrap());
             false
         }
     }
