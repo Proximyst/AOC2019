@@ -13,11 +13,7 @@ fn attempt(mut input: Vec<isize>, noun: isize, verb: isize) -> isize {
 
 #[aoc_generator(day2)]
 pub fn gen(input: &str) -> Vec<isize> {
-    input
-        .split(",")
-        .map(|s| s.trim())
-        .flat_map(|s| s.parse::<isize>())
-        .collect()
+    input.split(",").flat_map(|s| s.parse::<isize>()).collect()
 }
 
 #[aoc(day2, part1)]
