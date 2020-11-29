@@ -5,7 +5,7 @@ use rayon::prelude::*;
 pub fn gen(range: &str) -> (u32, u32) {
     let split = range
         .split('-')
-        .flat_map(|s| s.parse::<u32>())
+        .flat_map(str::parse)
         .collect::<Vec<_>>();
     assert_eq!(split.len(), 2);
 

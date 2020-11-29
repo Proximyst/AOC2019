@@ -3,7 +3,7 @@ use itertools::Itertools as _;
 
 #[aoc_generator(day7)]
 pub fn gen(input: &str) -> Vec<isize> {
-    input.split(',').flat_map(|s| s.parse()).collect()
+    input.split(',').flat_map(str::parse).collect()
 }
 
 fn calculate_thrust(

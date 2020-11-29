@@ -2,7 +2,7 @@
 pub fn gen(input: &str) -> Vec<i64> {
     input
         .lines()
-        .flat_map(|s| s.parse::<i64>())
+        .flat_map(str::parse)
         .map(self::calculate_fuel)
         .collect()
 }

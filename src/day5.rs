@@ -15,7 +15,7 @@ impl IoBus for DiagnosticIoBus {
 
 #[aoc_generator(day5)]
 pub fn gen(input: &str) -> Vec<isize> {
-    input.split(',').flat_map(|i| i.parse()).collect()
+    input.split(',').flat_map(str::parse).collect()
 }
 
 #[aoc(day5, part1)]
