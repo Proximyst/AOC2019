@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use indexmap::IndexSet;
+use std::collections::HashMap;
 
 // Given:
 //   A)B
@@ -52,8 +52,12 @@ pub fn part2_impl1(map: &HashMap<String, String>) -> usize {
     let mut intersection = santa_steps.intersection(&my_steps);
     let first = intersection.nth(0).expect("a common celestial object");
 
-    santa_steps.get_index_of(first).expect("common value to exist in both")
-        + my_steps.get_index_of(first).expect("common value to exist in both")
+    santa_steps
+        .get_index_of(first)
+        .expect("common value to exist in both")
+        + my_steps
+            .get_index_of(first)
+            .expect("common value to exist in both")
 }
 
 fn count_orbits(map: &HashMap<String, String>, object: &str) -> u32 {

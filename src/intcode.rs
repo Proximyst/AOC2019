@@ -52,7 +52,14 @@ use crate::DigitAtPosition as _;
 pub struct RunResult {
     pub pc: usize,
     pub relative_base: usize,
+    pub programmatic_break: bool,
     pub has_halted: bool,
+}
+
+impl RunResult {
+    pub fn stopped(&self) -> bool {
+        self.has_halted || self.programmatic_break
+    }
 }
 
 #[inline(always)]
@@ -64,15 +71,18 @@ pub fn run(
     let mut result = RunResult {
         pc,
         relative_base,
+        programmatic_break: false,
         has_halted: false,
     };
 
     while !result.has_halted {
+        debug_assert!(result.pc < program.len());
         let mut inc = true;
         let instr = Instr::parse(&program[result.pc..]);
         match instr {
             Instr::Hlt => {
                 result.has_halted = true;
+                result.pc += instr.size();
                 return result;
             }
 
@@ -92,7 +102,8 @@ pub fn run(
 
             Instr::Input(dst) => match io_handler.input() {
                 None => {
-                    result.has_halted = true;
+                    result.programmatic_break = true;
+                    result.pc += instr.size();
                     return result;
                 }
 
@@ -106,7 +117,8 @@ pub fn run(
             Instr::Output(cell) => {
                 let value = cell.read(&program, result.relative_base);
                 if io_handler.output(value) {
-                    result.has_halted = true;
+                    result.programmatic_break = true;
+                    result.pc += instr.size();
                     return result;
                 }
             }

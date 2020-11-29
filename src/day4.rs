@@ -19,7 +19,8 @@ pub fn part1_impl1(&(from, to): &(u32, u32)) -> usize {
 
 #[aoc(day4, part1, rayon)]
 pub fn part1_impl2(&(from, to): &(u32, u32)) -> usize {
-    (from..=to).into_par_iter()
+    (from..=to)
+        .into_par_iter()
         .filter(|&i| valid(i, true))
         .count()
 }
@@ -31,7 +32,8 @@ pub fn part2_impl1(&(from, to): &(u32, u32)) -> usize {
 
 #[aoc(day4, part2, rayon)]
 pub fn part2_impl2(&(from, to): &(u32, u32)) -> usize {
-    (from..=to).into_par_iter()
+    (from..=to)
+        .into_par_iter()
         .filter(|&i| valid(i, false))
         .count()
 }
